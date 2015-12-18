@@ -18,13 +18,14 @@ public class LightRipple : MonoBehaviour {
     public int numConcentricRipples = 2;
     public float rippleAlpha = 1f;
     public Color rippleColor = Color.white;
+    public bool invisible;
 
     const int maxRipples = 10;
     private List<Ripple> ripples = new List<Ripple>();
     private int nextRipple = 0;
 	private int rippleCount = 0;
 
-    private Vector3 previousPosition;
+    private Vector3 previousPosition; // used to move ripple along with object
 
     private Material material;
 
@@ -92,6 +93,7 @@ public class LightRipple : MonoBehaviour {
         material.SetFloat("_RippleSpacing_c", rippleSpacing);
         material.SetFloat("_NumConcentricRipples_c", numConcentricRipples);
         material.SetFloat("_RippleAlpha_c", rippleAlpha);
+        material.SetFloat("_Clip_c", (invisible ? -1 : 1));
         material.SetVector("_RippleColor", rippleColor);
     }
 

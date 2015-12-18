@@ -1,6 +1,6 @@
 ﻿Shader "Custom/LightRipple" {
 	Properties{
-		_RippleColor("Color", Color) = (1,1,1,1)
+		_Color("Color", Color) = (1,1,1,1)
 		_MainTex("Albedo (RGB)", 2D) = "white" {}
 		_Glossiness("Smoothness", Range(0,1)) = 0.5
 		_Metallic("Metallic", Range(0,1)) = 0.0
@@ -18,16 +18,16 @@
 		// Use shader model 3.0 target, to get nicer looking lighting
 		#pragma target 3.0
 
+		fixed4 _Color;
+		fixed4 _RippleColor;
 		sampler2D _MainTex;
+		half _Glossiness;
+		half _Metallic;
 
 		struct Input {
 			float2 uv_MainTex;
 			float3 worldPos;
-		};
-
-		half _Glossiness;
-		half _Metallic;
-		fixed4 _RippleColor;
+		};		
 
 		// 'constants'
 		float _MaxRadius_c;
@@ -35,6 +35,7 @@
 		float _RippleSpacing_c;
 		float _NumConcentricRipples_c;
 		float _RippleAlpha_c;
+		float _Clip_c; // < 0 == clip; otherwise don't clip
 
 		// ripple data
 		#define MAX_RIPPLES 10
@@ -73,17 +74,25 @@
 
 		void surf(Input IN, inout SurfaceOutputStandard o) {
 			int insideCount = ripple(IN.worldPos);
-			if (insideCount == 0) {
+			if (insideCount == 0 && _Clip_c < 0) {
 				clip(-1);
 				return;
 			}
-			// Albedo comes from a texture tinted by color
-			fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _RippleColor;
+			fixed4 c;
+			fixed alpha;
+			if (insideCount == 0) {
+				c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
+				alpha = c.a;
+			}
+			else if (insideCount > 0) {
+				c = tex2D(_MainTex, IN.uv_MainTex) * _RippleColor;
+				alpha = clamp(0, 1, _RippleAlpha_c * insideCount);
+			}
 			o.Albedo = c.rgb;
 			// Metallic and smoothness come from slider variables
 			o.Metallic = _Metallic;
 			o.Smoothness = _Glossiness;
-			o.Alpha = clamp(0, 1, _RippleAlpha_c * insideCount);
+			o.Alpha = alpha;
 		}
 		ENDCG
 	}
